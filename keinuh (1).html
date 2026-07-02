@@ -1,0 +1,646 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>keinuh — ao vivo agora</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0B0A14;
+    --bg2:#12101F;
+    --panel:#171426;
+    --panel-line:#2A2542;
+    --ink:#F1EEFB;
+    --muted:#9C93B8;
+    --violet:#8B5CF6;
+    --violet-dark:#5B3AA8;
+    --pink:#F0439E;
+    --cyan:#3FE0D0;
+    --gold:#F4C542;
+    --glow: 0 0 24px rgba(139,92,246,0.45);
+  }
+
+  *{ box-sizing:border-box; margin:0; padding:0; }
+  html{ scroll-behavior:smooth; }
+
+  body{
+    background:var(--bg);
+    color:var(--ink);
+    font-family:'Space Grotesk', sans-serif;
+    overflow-x:hidden;
+    position:relative;
+    cursor:none;
+  }
+
+  h1,h2,h3{ font-family:'Baloo 2', sans-serif; }
+
+  a, button, .catbox, .navpill a, .donate-btn{ cursor:none; }
+
+  /* ---------------- custom cursor ---------------- */
+  #cursor-dot{
+    position:fixed; top:0; left:0;
+    width:10px; height:10px;
+    background:var(--pink);
+    border-radius:50%;
+    pointer-events:none;
+    z-index:9999;
+    transform:translate(-50%,-50%);
+    box-shadow:0 0 10px var(--pink), 0 0 20px var(--pink);
+    transition:width .15s, height .15s, background .15s;
+  }
+  #cursor-ring{
+    position:fixed; top:0; left:0;
+    width:34px; height:34px;
+    border:2px solid var(--violet);
+    border-radius:50%;
+    pointer-events:none;
+    z-index:9998;
+    transform:translate(-50%,-50%);
+    transition:transform .15s ease-out, border-color .2s, width .2s, height .2s;
+    box-shadow:0 0 14px rgba(139,92,246,0.5);
+  }
+  .cursor-star{
+    position:fixed; top:0; left:0;
+    width:6px; height:6px;
+    pointer-events:none;
+    z-index:9997;
+    border-radius:50%;
+    background:var(--cyan);
+    box-shadow:0 0 8px var(--cyan);
+  }
+  a:hover ~ #cursor-ring, .link-hover #cursor-ring{
+    width:50px; height:50px;
+    border-color:var(--pink);
+  }
+
+  /* ---------------- animated background ---------------- */
+  .bg-fixed{
+    position:fixed; inset:0; z-index:0; overflow:hidden;
+    background:
+      radial-gradient(ellipse at 20% 20%, rgba(139,92,246,0.18), transparent 55%),
+      radial-gradient(ellipse at 85% 15%, rgba(240,67,158,0.14), transparent 50%),
+      radial-gradient(ellipse at 50% 90%, rgba(63,224,208,0.10), transparent 50%),
+      linear-gradient(180deg, var(--bg) 0%, var(--bg2) 100%);
+  }
+  .grid-overlay{
+    position:absolute; inset:0;
+    background-image:
+      linear-gradient(rgba(139,92,246,0.06) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(139,92,246,0.06) 1px, transparent 1px);
+    background-size:44px 44px;
+    mask-image:radial-gradient(circle at 50% 30%, black 0%, transparent 75%);
+    animation:gridshift 18s linear infinite;
+  }
+  @keyframes gridshift{
+    0%{ background-position:0 0, 0 0; }
+    100%{ background-position:44px 44px, 44px 44px; }
+  }
+  .orb{
+    position:absolute;
+    border-radius:50%;
+    filter:blur(2px);
+    opacity:0.55;
+    animation:drift 14s ease-in-out infinite;
+  }
+  @keyframes drift{
+    0%,100%{ transform:translate(0,0) scale(1); }
+    33%{ transform:translate(30px,-40px) scale(1.15); }
+    66%{ transform:translate(-25px,25px) scale(0.9); }
+  }
+  .star-field span{
+    position:absolute;
+    width:2px; height:2px;
+    background:#fff;
+    border-radius:50%;
+    opacity:0.6;
+    animation:twinkleBg 3s ease-in-out infinite;
+  }
+  @keyframes twinkleBg{
+    0%,100%{ opacity:0.15; }
+    50%{ opacity:0.9; }
+  }
+
+  .wrap{ max-width:1100px; margin:0 auto; padding:0 24px; position:relative; z-index:1; }
+
+  /* ---------------- header ---------------- */
+  header{
+    position:fixed; top:0; left:0; right:0; z-index:50;
+    display:flex; justify-content:center; padding:16px 0; pointer-events:none;
+  }
+  .navpill{
+    pointer-events:auto;
+    background:rgba(23,20,38,0.75);
+    backdrop-filter:blur(10px);
+    border:1px solid var(--panel-line);
+    border-radius:999px;
+    padding:8px; display:flex; gap:4px;
+    box-shadow:0 6px 24px rgba(0,0,0,0.4);
+  }
+  .navpill a{
+    text-decoration:none; color:var(--muted); font-weight:600; font-size:13px;
+    padding:9px 16px; border-radius:999px; transition:all .25s;
+  }
+  .navpill a:hover{ background:var(--violet); color:#fff; box-shadow:var(--glow); }
+
+  /* ---------------- hero ---------------- */
+  .hero{
+    min-height:100svh; display:flex; flex-direction:column;
+    align-items:center; justify-content:center; text-align:center;
+    position:relative; padding:100px 24px 60px;
+  }
+  .hero-eyebrow{
+    font-size:14px; letter-spacing:4px; text-transform:uppercase;
+    color:var(--cyan); font-weight:600; margin-bottom:14px;
+  }
+  .hero h1{
+    font-size:clamp(64px, 13vw, 128px);
+    font-weight:800; letter-spacing:1px; line-height:0.9;
+    background:linear-gradient(135deg, var(--violet) 0%, var(--pink) 55%, var(--gold) 100%);
+    -webkit-background-clip:text; background-clip:text; color:transparent;
+    filter:drop-shadow(0 0 40px rgba(139,92,246,0.35));
+  }
+  .hero .sub{
+    margin-top:18px; font-size:clamp(17px,2.4vw,21px);
+    color:var(--muted); font-weight:500;
+  }
+  .live-badge{
+    margin-top:30px; display:inline-flex; align-items:center; gap:10px;
+    background:var(--panel); border:1px solid var(--panel-line);
+    color:var(--ink); padding:11px 22px; border-radius:999px;
+    font-weight:600; font-size:14px; box-shadow:var(--glow);
+  }
+  .dot{ width:9px; height:9px; background:#ff4d6d; border-radius:50%; animation:pulse 1.4s ease-in-out infinite; }
+  @keyframes pulse{
+    0%,100%{ box-shadow:0 0 0 0 rgba(255,77,109,0.6); }
+    50%{ box-shadow:0 0 0 7px rgba(255,77,109,0); }
+  }
+  .hero-note{ margin-top:12px; font-size:12px; color:var(--muted); opacity:0.7; }
+
+  .scroll-hint{
+    position:absolute; bottom:28px; font-size:13px; color:var(--muted);
+    animation:bob 2s ease-in-out infinite; letter-spacing:1px;
+  }
+  @keyframes bob{ 0%,100%{ transform:translateY(0);} 50%{ transform:translateY(6px);} }
+
+  /* ---------------- sections ---------------- */
+  section{ position:relative; padding:110px 0; }
+  .section-title{
+    display:inline-flex; align-items:center; gap:10px;
+    font-size:clamp(30px,5vw,42px); font-weight:700; margin-bottom:50px;
+    color:var(--ink);
+  }
+  .section-title::before{
+    content:""; width:10px; height:10px; border-radius:50%;
+    background:var(--pink); box-shadow:0 0 12px var(--pink);
+  }
+
+  /* ---------------- about ---------------- */
+  .about-grid{ display:grid; grid-template-columns:1fr 1fr; gap:40px; align-items:center; }
+  .about-card{
+    background:var(--panel); border:1px solid var(--panel-line); border-radius:18px;
+    padding:36px; box-shadow:0 20px 50px rgba(0,0,0,0.35);
+  }
+  .stat-row{ display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-top:24px; }
+  .stat{
+    background:var(--bg2); border:1px solid var(--panel-line); border-radius:12px;
+    padding:16px 18px;
+  }
+  .stat .num{ font-family:'Baloo 2',sans-serif; font-size:24px; color:var(--cyan); }
+  .stat .label{ font-size:12px; color:var(--muted); margin-top:2px; }
+
+  .about-portrait{ justify-self:center; }
+  .cat-glow{
+    width:220px; height:220px; border-radius:50%;
+    background:radial-gradient(circle, rgba(139,92,246,0.35), transparent 70%);
+    display:flex; align-items:center; justify-content:center;
+    animation:floaty 5s ease-in-out infinite;
+  }
+  @keyframes floaty{ 0%,100%{ transform:translateY(0);} 50%{ transform:translateY(-14px);} }
+
+  /* ---------------- links / cat boxes ---------------- */
+  .box-grid{ display:grid; grid-template-columns:repeat(4,1fr); gap:32px; justify-items:center; }
+  .catbox{ text-decoration:none; color:inherit; display:flex; flex-direction:column; align-items:center; width:100%; max-width:220px; }
+  .catbox-stage{ position:relative; width:100%; aspect-ratio:1/1; }
+
+  .catbox-body{
+    position:absolute; left:0; right:0; bottom:0;
+    height:60%;
+    background:linear-gradient(160deg, var(--box-color, var(--panel)), #0000 140%), var(--panel);
+    border:2px solid var(--panel-line);
+    border-radius:14px; overflow:hidden;
+    box-shadow:0 14px 30px rgba(0,0,0,0.45);
+    transition:transform .35s cubic-bezier(.34,1.56,.64,1);
+    z-index:3;
+  }
+  .catbox-flap{
+    position:absolute;
+    width:52%; height:42%;
+    background:var(--box-color, var(--panel));
+    border:2px solid var(--panel-line);
+    border-radius:12px;
+    bottom:58%;
+    transform-origin:bottom center;
+    transition:transform .45s cubic-bezier(.34,1.56,.64,1);
+    z-index:4;
+  }
+  .flap-l{ left:6%; }
+  .flap-r{ right:6%; }
+
+  .cat-peek{
+    position:absolute; left:50%; bottom:6%;
+    transform:translate(-50%, 0%);
+    width:70%;
+    transition:transform .4s cubic-bezier(.34,1.56,.64,1) .08s;
+    z-index:1;
+    clip-path:inset(0 0 0 0);
+  }
+
+  .catbox:hover .catbox-body,
+  .catbox:focus-visible .catbox-body{ transform:translateY(-6px); }
+  .catbox:hover .flap-l,
+  .catbox:focus-visible .flap-l{ transform:rotate(-115deg); }
+  .catbox:hover .flap-r,
+  .catbox:focus-visible .flap-r{ transform:rotate(115deg); }
+  .catbox:hover .cat-peek,
+  .catbox:focus-visible .cat-peek{ transform:translate(-50%, -78%); }
+
+  .catbox-label{ margin-top:18px; font-family:'Baloo 2',sans-serif; font-weight:700; font-size:17px; }
+  .catbox-hint{
+    margin-top:2px; font-size:13px; color:var(--cyan); font-weight:600;
+    opacity:0; transform:translateY(-4px); transition:opacity .25s, transform .25s;
+  }
+  .catbox:hover .catbox-hint, .catbox:focus-visible .catbox-hint{ opacity:1; transform:translateY(0); }
+
+  .catbox-stage{ animation:invite 4.5s ease-in-out infinite; }
+  .catbox:nth-child(1) .catbox-stage{ animation-delay:0s; }
+  .catbox:nth-child(2) .catbox-stage{ animation-delay:.9s; }
+  .catbox:nth-child(3) .catbox-stage{ animation-delay:1.8s; }
+  .catbox:nth-child(4) .catbox-stage{ animation-delay:2.7s; }
+  @keyframes invite{
+    0%,85%,100%{ transform:rotate(0deg); }
+    88%{ transform:rotate(-2deg); }
+    91%{ transform:rotate(2deg); }
+    94%{ transform:rotate(-1deg); }
+  }
+
+  /* ---------------- benefits ---------------- */
+  .tier-grid{ display:grid; grid-template-columns:repeat(3,1fr); gap:26px; }
+  .tier-card{
+    background:var(--panel); border:1px solid var(--panel-line); border-radius:18px;
+    padding:30px 26px; position:relative; transition:transform .25s, box-shadow .25s;
+  }
+  .tier-card:hover{ transform:translateY(-6px); box-shadow:0 20px 40px rgba(139,92,246,0.25); }
+  .tier-card:nth-child(2){ border-color:var(--violet); box-shadow:0 0 0 1px var(--violet), var(--glow); }
+  .tier-badge{ font-size:12px; letter-spacing:2px; text-transform:uppercase; color:var(--muted); }
+  .tier-card h3{ font-size:25px; margin:8px 0 16px; }
+  .tier-card ul{ list-style:none; display:flex; flex-direction:column; gap:10px; font-size:14.5px; color:var(--muted); line-height:1.5; }
+  .tier-card li::before{ content:"▸"; color:var(--cyan); margin-right:8px; }
+  .tier-popular{
+    position:absolute; top:-13px; right:20px;
+    background:var(--pink); color:#fff; font-size:11px; font-weight:700;
+    padding:5px 12px; border-radius:999px; letter-spacing:0.5px;
+  }
+
+  /* ---------------- rules ---------------- */
+  .rules-card{
+    background:var(--panel); border:1px solid var(--panel-line); border-radius:18px;
+    padding:34px 38px; max-width:760px; margin:0 auto;
+  }
+  .rules-list{ list-style:none; display:grid; grid-template-columns:1fr 1fr; gap:16px 28px; margin-top:20px; }
+  .rules-list li{ font-size:14.5px; line-height:1.5; padding-left:26px; position:relative; color:var(--muted); }
+  .rules-list li::before{ content:"◆"; position:absolute; left:0; top:1px; color:var(--gold); font-size:11px; }
+
+  /* ---------------- donate ---------------- */
+  .donate-card{
+    max-width:640px; margin:0 auto; text-align:center;
+    background:linear-gradient(135deg, var(--violet-dark), var(--pink));
+    border-radius:22px; padding:46px 40px;
+    box-shadow:0 25px 60px rgba(139,92,246,0.35);
+  }
+  .donate-card h2{ font-size:32px; margin-bottom:14px; color:#fff; }
+  .donate-card p{ font-size:16px; line-height:1.6; opacity:0.95; color:#fff; }
+  .donate-btn{
+    display:inline-block; margin-top:26px;
+    background:#fff; color:#1a1330; text-decoration:none;
+    font-family:'Baloo 2',sans-serif; font-weight:700;
+    padding:14px 34px; border-radius:999px; transition:transform .2s;
+  }
+  .donate-btn:hover{ transform:translateY(-3px) scale(1.03); }
+
+  footer{ text-align:center; padding:50px 24px 40px; font-size:13px; color:var(--muted); position:relative; z-index:1; }
+  footer .tag{ font-size:16px; display:block; margin-bottom:6px; color:var(--ink); }
+
+  @media (max-width: 860px){
+    body{ cursor:auto; }
+    #cursor-dot, #cursor-ring{ display:none; }
+    a, button, .catbox{ cursor:pointer; }
+    .about-grid{ grid-template-columns:1fr; }
+    .about-portrait{ order:-1; }
+    .box-grid{ grid-template-columns:repeat(2,1fr); }
+    .tier-grid{ grid-template-columns:1fr; }
+    .rules-list{ grid-template-columns:1fr; }
+    .navpill{ transform:scale(0.85); }
+  }
+</style>
+</head>
+<body>
+
+<div id="cursor-dot"></div>
+<div id="cursor-ring"></div>
+
+<div class="bg-fixed">
+  <div class="grid-overlay"></div>
+  <div class="orb" style="width:280px;height:280px;top:8%;left:8%;background:radial-gradient(circle,var(--violet),transparent 70%);"></div>
+  <div class="orb" style="width:220px;height:220px;top:55%;right:10%;background:radial-gradient(circle,var(--pink),transparent 70%); animation-delay:4s;"></div>
+  <div class="orb" style="width:180px;height:180px;bottom:6%;left:35%;background:radial-gradient(circle,var(--cyan),transparent 70%); animation-delay:8s;"></div>
+  <div class="star-field" id="starField"></div>
+</div>
+
+<header>
+  <nav class="navpill">
+    <a href="#sobre">sobre</a>
+    <a href="#links">links</a>
+    <a href="#beneficios">assinatura</a>
+    <a href="#apoie">apoie</a>
+  </nav>
+</header>
+
+<!-- ================= HERO ================= -->
+<section class="hero">
+  <div class="hero-eyebrow">bem-vindo ao território do</div>
+  <h1>KEINUH</h1>
+  <div class="sub">gameplay de péssima qualidade, mas tamo ai, né!  🎮</div>
+
+  <div class="live-badge">
+    <span class="dot"></span> AO VIVO · 19H30 ÀS 01H
+  </div>
+  <div class="hero-note">confira os dias exatos na Twitch ✧</div>
+
+  <div style="margin-top:34px;">
+    <svg width="180" height="120" viewBox="0 0 180 120" xmlns="http://www.w3.org/2000/svg">
+      <path d="M40 30 L58 2 L70 34 Z" fill="var(--violet)" stroke="#fff" stroke-opacity="0.15" stroke-width="2"/>
+      <path d="M140 30 L122 2 L110 34 Z" fill="var(--violet)" stroke="#fff" stroke-opacity="0.15" stroke-width="2"/>
+      <rect x="35" y="28" width="110" height="70" rx="30" fill="var(--panel)" stroke="var(--violet)" stroke-width="2"/>
+      <circle cx="70" cy="62" r="6" fill="var(--cyan)">
+        <animate attributeName="ry" values="6;1;6" dur="4s" repeatCount="indefinite" begin="1s"/>
+      </circle>
+      <circle cx="110" cy="62" r="6" fill="var(--cyan)">
+        <animate attributeName="ry" values="6;1;6" dur="4s" repeatCount="indefinite" begin="1s"/>
+      </circle>
+      <path d="M80 76 Q90 82 100 76" stroke="var(--pink)" stroke-width="3" fill="none" stroke-linecap="round"/>
+    </svg>
+  </div>
+
+  <div class="scroll-hint">role pra baixo ↓</div>
+</section>
+
+<!-- ================= SOBRE ================= -->
+<section id="sobre">
+  <div class="wrap">
+    <h2 class="section-title">sobre mim</h2>
+    <div class="about-grid">
+      <div class="about-card">
+        <p>Prazer, sou o <strong>Keinuh</strong>. Tenho 18 anos e gosto demais de fzr live jogando. Só resenha aqui!</p>
+        <p style="margin-top:14px; color:var(--muted);">Comecei a fazer live no dia <strong style="color:var(--ink);">19/01/2024</strong>. Se quiser me dar parabéns, guarda a data: <strong style="color:var(--ink);">14/09</strong> — aceito bolo e presente :D.</p>
+        <div class="stat-row">
+          <div class="stat"><div class="num">18</div><div class="label">anos de idade</div></div>
+          <div class="stat"><div class="num">19/01</div><div class="label">primeira live (2024)</div></div>
+          <div class="stat"><div class="num">14/09</div><div class="label">aniversário</div></div>
+          <div class="stat"><div class="num">19h30</div><div class="label">horário de entrar ao vivo</div></div>
+        </div>
+      </div>
+      <div class="about-portrait">
+        <div class="cat-glow">
+          <svg width="150" height="150" viewBox="0 0 150 150" xmlns="http://www.w3.org/2000/svg">
+            <path d="M30 46 L46 12 L58 50 Z" fill="var(--pink)" stroke="#fff" stroke-opacity="0.15" stroke-width="2"/>
+            <path d="M120 46 L104 12 L92 50 Z" fill="var(--pink)" stroke="#fff" stroke-opacity="0.15" stroke-width="2"/>
+            <rect x="25" y="44" width="100" height="76" rx="34" fill="var(--panel)" stroke="var(--pink)" stroke-width="2"/>
+            <circle cx="58" cy="82" r="5.5" fill="var(--gold)"/>
+            <circle cx="92" cy="82" r="5.5" fill="var(--gold)"/>
+            <path d="M66 96 Q75 102 84 96" stroke="var(--cyan)" stroke-width="3" fill="none" stroke-linecap="round"/>
+          </svg>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= LINKS ================= -->
+<section id="links">
+  <div class="wrap">
+    <h2 class="section-title">meus links — abre a caixinha</h2>
+    <div class="box-grid">
+
+      <a class="catbox" href="https://www.twitch.tv/keinuh" target="_blank" rel="noopener">
+        <div class="catbox-stage" style="--box-color:#5B3AA8;">
+          <div class="catbox-flap flap-l"></div>
+          <div class="catbox-flap flap-r"></div>
+          <svg class="cat-peek" viewBox="0 0 100 90" xmlns="http://www.w3.org/2000/svg">
+            <path d="M18 40 L30 12 L42 42 Z" fill="var(--violet)" stroke="#fff" stroke-opacity="0.2" stroke-width="2"/>
+            <path d="M82 40 L70 12 L58 42 Z" fill="var(--violet)" stroke="#fff" stroke-opacity="0.2" stroke-width="2"/>
+            <rect x="15" y="38" width="70" height="52" rx="22" fill="#1E1A32" stroke="var(--violet)" stroke-width="2"/>
+            <circle cx="38" cy="62" r="4.5" fill="var(--cyan)"/>
+            <circle cx="62" cy="62" r="4.5" fill="var(--cyan)"/>
+            <path d="M45 74 Q50 78 55 74" stroke="var(--pink)" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+          </svg>
+          <div class="catbox-body"></div>
+        </div>
+        <div class="catbox-label">Twitch</div>
+        <div class="catbox-hint">clica que eu te levo! ✧</div>
+      </a>
+
+      <a class="catbox" href="https://www.instagram.com/keiinuh/" target="_blank" rel="noopener">
+        <div class="catbox-stage" style="--box-color:#A8306E;">
+          <div class="catbox-flap flap-l"></div>
+          <div class="catbox-flap flap-r"></div>
+          <svg class="cat-peek" viewBox="0 0 100 90" xmlns="http://www.w3.org/2000/svg">
+            <path d="M18 40 L30 12 L42 42 Z" fill="var(--pink)" stroke="#fff" stroke-opacity="0.2" stroke-width="2"/>
+            <path d="M82 40 L70 12 L58 42 Z" fill="var(--pink)" stroke="#fff" stroke-opacity="0.2" stroke-width="2"/>
+            <rect x="15" y="38" width="70" height="52" rx="22" fill="#1E1A32" stroke="var(--pink)" stroke-width="2"/>
+            <circle cx="38" cy="62" r="4.5" fill="var(--gold)"/>
+            <circle cx="62" cy="62" r="4.5" fill="var(--gold)"/>
+            <path d="M45 74 Q50 78 55 74" stroke="var(--cyan)" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+          </svg>
+          <div class="catbox-body"></div>
+        </div>
+        <div class="catbox-label">Instagram</div>
+        <div class="catbox-hint">clica que eu te levo! ✧</div>
+      </a>
+
+      <a class="catbox" href="https://www.tiktok.com/@keiinuh" target="_blank" rel="noopener">
+        <div class="catbox-stage" style="--box-color:#1B1730;">
+          <div class="catbox-flap flap-l"></div>
+          <div class="catbox-flap flap-r"></div>
+          <svg class="cat-peek" viewBox="0 0 100 90" xmlns="http://www.w3.org/2000/svg">
+            <path d="M18 40 L30 12 L42 42 Z" fill="#1B1730" stroke="var(--cyan)" stroke-width="2"/>
+            <path d="M82 40 L70 12 L58 42 Z" fill="#1B1730" stroke="var(--cyan)" stroke-width="2"/>
+            <rect x="15" y="38" width="70" height="52" rx="22" fill="#1E1A32" stroke="var(--cyan)" stroke-width="2"/>
+            <circle cx="38" cy="62" r="4.5" fill="var(--pink)"/>
+            <circle cx="62" cy="62" r="4.5" fill="var(--pink)"/>
+            <path d="M45 74 Q50 78 55 74" stroke="var(--gold)" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+          </svg>
+          <div class="catbox-body"></div>
+        </div>
+        <div class="catbox-label">TikTok</div>
+        <div class="catbox-hint">clica que eu te levo! ✧</div>
+      </a>
+
+      <a class="catbox" href="https://livepix.gg/keinuh" target="_blank" rel="noopener">
+        <div class="catbox-stage" style="--box-color:#C99A2E;">
+          <div class="catbox-flap flap-l"></div>
+          <div class="catbox-flap flap-r"></div>
+          <svg class="cat-peek" viewBox="0 0 100 90" xmlns="http://www.w3.org/2000/svg">
+            <path d="M18 40 L30 12 L42 42 Z" fill="var(--gold)" stroke="#fff" stroke-opacity="0.2" stroke-width="2"/>
+            <path d="M82 40 L70 12 L58 42 Z" fill="var(--gold)" stroke="#fff" stroke-opacity="0.2" stroke-width="2"/>
+            <rect x="15" y="38" width="70" height="52" rx="22" fill="#1E1A32" stroke="var(--gold)" stroke-width="2"/>
+            <circle cx="38" cy="62" r="4.5" fill="var(--violet)"/>
+            <circle cx="62" cy="62" r="4.5" fill="var(--violet)"/>
+            <path d="M45 74 Q50 78 55 74" stroke="var(--pink)" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+          </svg>
+          <div class="catbox-body"></div>
+        </div>
+        <div class="catbox-label">Apoie (LivePix)</div>
+        <div class="catbox-hint">clica que eu te levo! ✧</div>
+      </a>
+
+      <a class="catbox" href="https://discord.gg/Kt7Jub6w35" target="_blank" rel="noopener">
+        <div class="catbox-stage" style="--box-color:#17b631;">
+          <div class="catbox-flap flap-l"></div>
+          <div class="catbox-flap flap-r"></div>
+          <svg class="cat-peek" viewBox="0 0 100 90" xmlns="http://www.w3.org/2000/svg">
+            <path d="M18 40 L30 12 L42 42 Z" fill="var(--violet)" stroke="#fff" stroke-opacity="0.2" stroke-width="2"/>
+            <path d="M82 40 L70 12 L58 42 Z" fill="var(--violet)" stroke="#fff" stroke-opacity="0.2" stroke-width="2"/>
+            <rect x="15" y="38" width="70" height="52" rx="22" fill="#1E1A32" stroke="var(--violet)" stroke-width="2"/>
+            <circle cx="38" cy="62" r="4.5" fill="var(--cyan)"/>
+            <circle cx="62" cy="62" r="4.5" fill="var(--cyan)"/>
+            <path d="M45 74 Q50 78 55 74" stroke="var(--pink)" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+          </svg>
+          <div class="catbox-body"></div>
+        </div>
+        <div class="catbox-label">Discord</div>
+        <div class="catbox-hint">clica que eu te levo! ✧</div>
+      </a>
+
+    </div>
+  </div>
+</section>
+
+<!-- ================= BENEFÍCIOS ================= -->
+<section id="beneficios">
+  <div class="wrap">
+    <h2 class="section-title">benefícios de assinante (mensal)</h2>
+    <div class="tier-grid">
+      <div class="tier-card">
+        <div class="tier-badge">Tier 1</div>
+        <h3>🎮 Recruta (10 reais no livepix)</h3>
+        <ul>
+          <li>Emotes e badge exclusivos de assinante</li>
+          <li>Cargo de sub no discord!"</li>
+          <li>pode escolher killer ou surv q jogo 1 vez por semana</li>
+        </ul>
+      </div>
+      <div class="tier-card">
+        <span class="tier-popular">mais escolhido</span>
+        <div class="tier-badge">Tier 2</div>
+        <h3>🕹️ Veterano (15 reais no livepix)</h3>
+        <ul>
+          <li>Tudo do Recruta</li>
+          <li>Pode escolher killer ou surv q jogo uma vez por live!</li>
+          <li>Prioridade pra jogar comigo nas lives com squad (pode furar fila duas vezes por live)</li>
+          <li>Emote animado exclusivo do canal :D</li>
+        </ul>
+      </div>
+      <div class="tier-card">
+        <div class="tier-badge">Tier 3</div>
+        <h3>👑 Lenda (20 reais no live pix)</h3>
+        <ul>
+          <li>Tudo do Veterano</li>
+          <li>Escolhe o jogo de uma live por semana</li>
+          <li>Nome nos créditos de encerramento na tela</li>
+          <li>Ganha um selo de vip no nome da twitch (faz com que você não assista anúncios e fique com o selo bala)</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= REGRINHAS ================= -->
+<section id="regras">
+  <div class="wrap" style="text-align:center;">
+    <h2 class="section-title" style="justify-content:center;">regrinhas rápidas</h2>
+    <div class="rules-card" style="text-align:left;">
+      <p style="font-weight:600; color:var(--ink);">pra manter o chat gostoso de ficar:</p>
+      <ul class="rules-list">
+        <li>Respeito sempre — briga não tem vez por aqui.</li>
+        <li>Nada de spam ou flood, minha conexão já sofre sozinha :(.</li>
+        <li>Sem clima pesado: política e preconceito ficam de fora.</li>
+        <li>Bom humor é bem-vindo, sarcasmo também (com moderação).</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ================= APOIE ================= -->
+<section id="apoie">
+  <div class="wrap">
+    <div class="donate-card">
+      <h2>apoie a live</h2>
+      <p>Curtiu o caos de hoje? Um energético ajuda a manter o setup rodando redondinho e as madrugadas de live acontecendo. Qualquer valor já ajuda demais.</p>
+      <a class="donate-btn" href="https://livepix.gg/keinuh" target="_blank" rel="noopener">fazer uma doação</a>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <span class="tag">até a próxima live ✦</span>
+  keinuh © 2026 — feito com muita inteligência, né bb? sou isperto
+</footer>
+
+<script>
+  // custom cursor
+  const dot = document.getElementById('cursor-dot');
+  const ring = document.getElementById('cursor-ring');
+  let mx=0,my=0, rx=0, ry=0;
+  window.addEventListener('mousemove', e=>{
+    mx=e.clientX; my=e.clientY;
+    dot.style.left=mx+'px'; dot.style.top=my+'px';
+    if(e.target.closest('a, .catbox, button')){
+      ring.style.width='50px'; ring.style.height='50px'; ring.style.borderColor='var(--pink)';
+    } else {
+      ring.style.width='34px'; ring.style.height='34px'; ring.style.borderColor='var(--violet)';
+    }
+    // trail
+    if(Math.random() > 0.6){
+      const star = document.createElement('div');
+      star.className='cursor-star';
+      star.style.left=mx+'px'; star.style.top=my+'px';
+      document.body.appendChild(star);
+      star.animate([
+        { transform:'translate(-50%,-50%) scale(1)', opacity:1 },
+        { transform:`translate(-50%,-50%) scale(0) translateY(${10+Math.random()*20}px)`, opacity:0 }
+      ], { duration:600, easing:'ease-out' }).onfinish = () => star.remove();
+    }
+  });
+  function raf(){
+    rx += (mx-rx)*0.18; ry += (my-ry)*0.18;
+    ring.style.left=rx+'px'; ring.style.top=ry+'px';
+    requestAnimationFrame(raf);
+  }
+  raf();
+
+  // starfield background
+  const field = document.getElementById('starField');
+  for(let i=0;i<60;i++){
+    const s = document.createElement('span');
+    s.style.left = Math.random()*100+'%';
+    s.style.top = Math.random()*100+'%';
+    s.style.animationDelay = (Math.random()*3)+'s';
+    s.style.animationDuration = (2+Math.random()*3)+'s';
+    field.appendChild(s);
+  }
+</script>
+
+</body>
+</html>
